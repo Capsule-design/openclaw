@@ -1292,6 +1292,7 @@ export async function runEmbeddedPiAgent(
             skillsSnapshot: params.skillsSnapshot,
             prompt,
             transcriptPrompt: params.transcriptPrompt,
+            currentTurnKind: params.currentTurnKind,
             currentTurnContext: params.currentTurnContext,
             images: params.images,
             imageOrder: params.imageOrder,
@@ -1373,6 +1374,8 @@ export async function runEmbeddedPiAgent(
             bootstrapPromptWarningSignature:
               bootstrapPromptWarningSignaturesSeen[bootstrapPromptWarningSignaturesSeen.length - 1],
             suppressNextUserMessagePersistence,
+            suppressTranscriptOnlyAssistantPersistence:
+              params.suppressTranscriptOnlyAssistantPersistence,
             onUserMessagePersisted,
           })
             .catch((err: unknown): never => {
