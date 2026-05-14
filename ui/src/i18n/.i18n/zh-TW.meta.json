@@ -1,16 +1,28 @@
 {
   "fallbackKeys": [
+    "agents.create.avatar",
+    "agents.create.emoji",
+    "agents.create.model",
+    "agents.create.modelDefault",
+    "agents.create.normalizedId",
+    "agents.create.open",
+    "agents.create.openTitle",
+    "agents.create.pendingConfigError",
+    "agents.create.submit",
+    "agents.create.title",
+    "agents.create.workspace",
     "chat.autoScrollAlways",
     "chat.autoScrollMode",
     "chat.autoScrollNearBottom",
-    "chat.autoScrollOff"
+    "chat.autoScrollOff",
+    "common.close"
   ],
-  "generatedAt": "2026-05-14T02:57:11.419Z",
+  "generatedAt": "2026-05-14T22:51:35.340Z",
   "locale": "zh-TW",
   "model": "gpt-5.5",
   "provider": "openai",
-  "sourceHash": "21a3e182cf575ee49da8100200441d290766012efb17685445098f21d46dcab7",
-  "totalKeys": 1112,
-  "translatedKeys": 1108,
+  "sourceHash": "ac856e1b97fc0646436c8500f987bd436e9d92b0abc03b194cf774bebf39dd9d",
+  "totalKeys": 1125,
+  "translatedKeys": 1109,
   "workflow": 1
 }

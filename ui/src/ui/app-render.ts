@@ -36,6 +36,9 @@ import { loadAgentIdentities, loadAgentIdentity } from "./controllers/agent-iden
 import { loadAgentSkills } from "./controllers/agent-skills.ts";
 import {
   buildToolsEffectiveRequestKey,
+  buildDefaultCreateAgentWorkspace,
+  createAgentFromDraft,
+  createDefaultAgentCreateDraft,
   loadAgents,
   loadToolsCatalog,
   loadToolsEffective,
@@ -144,6 +147,7 @@ import { isPluginEnabledInConfigSnapshot } from "./plugin-activation.ts";
 import "./components/dashboard-header.ts";
 import {
   buildAgentMainSessionKey,
+  normalizeAgentId,
   parseAgentSessionKey,
   resolveAgentIdFromSessionKey,
 } from "./session-key.ts";
@@ -1391,6 +1395,61 @@ export function renderApp(state: AppViewState) {
     state.toolsCatalogLoading = false;
     resetToolsEffectiveState(state);
   };
+  const updateAgentCreateDraft = (
+    patch: Partial<AppViewState["agentCreateDraft"]>,
+    options?: { workspaceTouched?: boolean },
+  ) => {
+    const previous = state.agentCreateDraft ?? createDefaultAgentCreateDraft(state.agentsList);
+    const next = { ...previous, ...patch };
+    if (options?.workspaceTouched) {
+      state.agentCreateWorkspaceTouched = true;
+    }
+    if ("name" in patch && !state.agentCreateWorkspaceTouched) {
+      next.workspace = buildDefaultCreateAgentWorkspace(
+        state.agentsList,
+        normalizeAgentId(next.name),
+      );
+    }
+    state.agentCreateDraft = next;
+    state.agentCreateError = null;
+  };
+  const closeAgentCreateDialog = () => {
+    if (state.agentCreateSubmitting) {
+      return;
+    }
+    state.agentCreateOpen = false;
+    state.agentCreateError = null;
+    state.agentCreateWorkspaceTouched = false;
+    state.agentCreateDraft = createDefaultAgentCreateDraft(state.agentsList);
+  };
+  const submitAgentCreateDialog = async () => {
+    if (state.agentCreateSubmitting) {
+      return;
+    }
+    if (state.configFormDirty) {
+      state.agentCreateError = t("agents.create.pendingConfigError");
+      return;
+    }
+    state.agentCreateSubmitting = true;
+    state.agentCreateError = null;
+    requestHostUpdate?.();
+    try {
+      const created = await createAgentFromDraft(state, state.agentCreateDraft);
+      resetAgentSelectionPanelState();
+      state.agentCreateOpen = false;
+      state.agentCreateWorkspaceTouched = false;
+      state.agentCreateDraft = createDefaultAgentCreateDraft(state.agentsList);
+      await loadConfig(state, { discardPendingChanges: true });
+      void loadAgentIdentity(state, created.agentId);
+      loadAgentPanelDataForSelectedAgent(created.agentId);
+      refreshAgentsPanelSupplementalData(state.agentsPanel);
+    } catch (err) {
+      state.agentCreateError = String(err);
+    } finally {
+      state.agentCreateSubmitting = false;
+      requestHostUpdate?.();
+    }
+  };
 
   return html`
     ${renderCommandPalette({
@@ -2076,6 +2135,12 @@ export function renderApp(state: AppViewState) {
                 runtimeSessionKey: state.sessionKey,
                 runtimeSessionMatchesSelectedAgent: toolsPanelUsesActiveSession,
                 modelCatalog: state.chatModelCatalog ?? [],
+                create: {
+                  open: state.agentCreateOpen,
+                  draft: state.agentCreateDraft,
+                  submitting: state.agentCreateSubmitting,
+                  error: state.agentCreateError,
+                },
                 onRefresh: async () => {
                   await loadAgents(state);
                   const agentIds = state.agentsList?.agents?.map((entry) => entry.id) ?? [];
@@ -2094,6 +2159,15 @@ export function renderApp(state: AppViewState) {
                   void loadAgentIdentity(state, agentId);
                   loadAgentPanelDataForSelectedAgent(agentId);
                 },
+                onCreateOpen: () => {
+                  state.agentCreateOpen = true;
+                  state.agentCreateWorkspaceTouched = false;
+                  state.agentCreateError = null;
+                  state.agentCreateDraft = createDefaultAgentCreateDraft(state.agentsList);
+                },
+                onCreateCancel: closeAgentCreateDialog,
+                onCreateDraftChange: updateAgentCreateDraft,
+                onCreateSubmit: () => void submitAgentCreateDialog(),
                 onSelectPanel: (panel) => {
                   state.agentsPanel = panel;
                   if (
