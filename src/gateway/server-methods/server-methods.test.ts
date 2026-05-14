@@ -1259,7 +1259,7 @@ describe("exec approval handlers", () => {
     }
   });
 
-  it("does not broadcast a stale approval request when resolved during command analysis", async () => {
+  it("does not expose exec approvals until command analysis is attached", async () => {
     const { manager, handlers, broadcasts, respond, context } = createExecApprovalFixture();
     let resolveAnalysis:
       | ((value: Awaited<ReturnType<ResolveCommandAnalysisSummaryForDisplay>>) => void)
@@ -1286,9 +1286,14 @@ describe("exec approval handlers", () => {
       },
     });
 
-    await vi.waitFor(() => {
-      expect(manager.getSnapshot("approval-analysis-race")?.resolvedAtMs).toBeUndefined();
-    });
+    const listRespond = vi.fn();
+    await listExecApprovals({ handlers, respond: listRespond });
+    expect(mockCallArg(listRespond)).toBe(true);
+    expect(mockCallArg(listRespond, 0, 1)).toEqual([]);
+
+    const getRespond = vi.fn();
+    await getExecApproval({ handlers, id: "approval-analysis-race", respond: getRespond });
+    expect(mockCallArg(getRespond)).toBe(false);
 
     const resolveRespond = vi.fn();
     await resolveExecApproval({
@@ -1297,25 +1302,33 @@ describe("exec approval handlers", () => {
       respond: resolveRespond,
       context,
     });
-    expect(resolveRespond).toHaveBeenCalledWith(true, { ok: true }, undefined);
+    expect(mockCallArg(resolveRespond)).toBe(false);
 
     if (!resolveAnalysis) {
       throw new Error("command analysis resolver was not installed");
     }
     resolveAnalysis(null);
+    const { id } = await waitForRequestedExecApprovalPayload(broadcasts);
+
+    const visibleGetRespond = vi.fn();
+    await getExecApproval({ handlers, id, respond: visibleGetRespond });
+    expect(mockCallArg(visibleGetRespond)).toBe(true);
+
+    const visibleResolveRespond = vi.fn();
+    await resolveExecApproval({
+      handlers,
+      id,
+      respond: visibleResolveRespond,
+      context,
+    });
     await requestPromise;
 
     expect(broadcasts.some((entry) => entry.event === "exec.approval.resolved")).toBe(true);
-    expect(broadcasts.some((entry) => entry.event === "exec.approval.requested")).toBe(false);
-    expect(lastMockCallArg(respond)).toBe(true);
-    expectRecordFields(lastMockCallArg(respond, 1), {
-      id: "approval-analysis-race",
-      decision: "allow-once",
-    });
+    expect(mockCallArg(visibleResolveRespond)).toBe(true);
   });
 
   it("lists pending exec approvals", async () => {
-    const { handlers, respond, context } = createExecApprovalFixture();
+    const { handlers, broadcasts, respond, context } = createExecApprovalFixture();
     const requestPromise = requestExecApproval({
       handlers,
       respond,
@@ -1328,6 +1341,7 @@ describe("exec approval handlers", () => {
         nodeId: undefined,
       },
     });
+    await waitForRequestedExecApprovalPayload(broadcasts);
 
     const listRespond = vi.fn();
     await listExecApprovals({ handlers, respond: listRespond });
@@ -1425,6 +1439,7 @@ describe("exec approval handlers", () => {
       context,
       params: { id: "approval-repeat-1", twoPhase: true },
     });
+    await waitForRequestedExecApprovalPayload(broadcasts);
 
     const firstResolveRespond = vi.fn();
     await resolveExecApproval({
@@ -1988,7 +2003,14 @@ describe("exec approval handlers", () => {
       params: { id: "approval-two", host: "gateway", timeoutMs: 60_000 },
     });
 
-    await drainApprovalRequestTicks();
+    await vi.waitFor(() => {
+      const snapshotOne = manager.getSnapshot("approval-one");
+      const snapshotTwo = manager.getSnapshot("approval-two");
+      expect(snapshotOne).not.toBeNull();
+      expect(snapshotTwo).not.toBeNull();
+      expect(snapshotOne?.resolvedAtMs).toBeUndefined();
+      expect(snapshotTwo?.resolvedAtMs).toBeUndefined();
+    });
 
     const resolveRespond = vi.fn();
     await resolveExecApproval({
@@ -2084,7 +2106,7 @@ describe("exec approval handlers", () => {
         turnSourceThreadId: "thread-456",
       },
     });
-    await drainApprovalRequestTicks();
+    await waitForRequestedExecApprovalPayload(broadcasts);
 
     const resolveRespond = vi.fn();
     await resolveExecApproval({
@@ -2195,7 +2217,9 @@ describe("exec approval handlers", () => {
       context,
       params: { timeoutMs: 60_000, id: "approval-ios-cleanup", host: "gateway" },
     });
-    await drainApprovalRequestTicks();
+    await vi.waitFor(() => {
+      expect(iosPushDelivery.handleRequested).toHaveBeenCalled();
+    });
 
     await resolveExecApproval({
       handlers,
