@@ -19,6 +19,7 @@ minimumReleaseAgeExclude:
   - "@cloudflare/workers-types"
   - "@hono/node-server"
   - "@mariozechner/*"
+  - "@openclaw/proxyline"
   - "@openai/codex"
   - "@openai/codex-*"
   - "@typescript/native-preview*"
@@ -80,6 +81,7 @@ allowBuilds:
   sharp: true
   tree-sitter-bash: false
   openclaw: true
+  "@openclaw/proxyline": true
 
 packageExtensions:
   "@earendil-works/pi-coding-agent":

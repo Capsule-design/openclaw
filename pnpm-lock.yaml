@@ -105,8 +105,8 @@ importers:
         specifier: 0.2.2
         version: 0.2.2
       '@openclaw/proxyline':
-        specifier: 0.1.1
-        version: 0.1.1
+        specifier: 0.2.0
+        version: 0.2.0
       '@slack/bolt':
         specifier: 4.7.2
         version: 4.7.2(@types/express@5.0.6)
@@ -3353,8 +3353,8 @@ packages:
     resolution: {integrity: sha512-rQIqgVjuI8MONThAuOsGp1x1nK5UUvBYI8BW5OZtZw/0d8MbSfl27DNdkxzNF2FwHb8yKG8VBnmTlPHI269KTw==}
     engines: {node: '>=20.11'}
 
-  '@openclaw/proxyline@0.1.1':
-    resolution: {integrity: sha512-ZGqAvQlw3HE+wV26ZlV+EIL6XovpWK4TvmFeb6RucxwYbGbwmS/h2out03s0NtFuF30gz7uRt45Dbfn9UDvnpA==}
+  '@openclaw/proxyline@0.2.0':
+    resolution: {integrity: sha512-puZtDMshL/ikWQPXq6GPYT5z3994m++Rp1mMs3Kw4/J1xaAeAlCkBH21n2DhTDdWiLwAbpeFqV3OL3jfwv99EQ==}
     engines: {node: '>=20.18.1'}
 
   '@opentelemetry/api-logs@0.217.0':
@@ -10022,12 +10022,9 @@ snapshots:
       jszip: 3.10.1
       tar: 7.5.15
 
-  '@openclaw/proxyline@0.1.1':
+  '@openclaw/proxyline@0.2.0':
     dependencies:
-      proxy-agent: 8.0.1
       undici: 7.25.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@opentelemetry/api-logs@0.217.0':
     dependencies:
