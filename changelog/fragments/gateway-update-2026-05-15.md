@@ -1,0 +1,1 @@
+- Local environment maintenance: upgraded OpenClaw Gateway from `2026.5.7` to `2026.5.12` via `openclaw update`, then validated service health with `openclaw status --all --deep --timeout 15000` and `openclaw gateway status --check-for-updates` (runtime running, connectivity probe `ok`, listening on `127.0.0.1:18789`).
